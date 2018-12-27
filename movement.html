@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Car booking app using Google Maps JavaScript API and HTML5 - CodingSection Demo</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+	<style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        height: 100%;
+      }
+      .pac-card {
+     margin: 10px 10px 0 0;
+     border-radius: 2px 0 0 2px;
+     box-sizing: border-box;
+     -moz-box-sizing: border-box;
+     outline: none;
+     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+     background-color: #fff;
+     font-family: Roboto;
+   }
+
+   #pac-container {
+     padding-bottom: 12px;
+     margin-right: 12px;
+   }
+
+   .pac-controls {
+     display: inline-block;
+     padding: 5px 11px;
+   }
+
+   .pac-controls label {
+     font-family: Roboto;
+     font-size: 13px;
+     font-weight: 300;
+   }
+
+   #pac-input {
+     background-color: #fff;
+     font-family: Roboto;
+     font-size: 15px;
+     font-weight: 300;
+     margin-left: 12px;
+     padding: 0 11px 0 13px;
+     text-overflow: ellipsis;
+     width: 400px;
+   }
+
+   #pac-input:focus {
+     border-color: #4d90fe;
+   }
+    </style>
+    <script
+  src="https://code.jquery.com/jquery-3.3.1.js"
+  integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60="
+  crossorigin="anonymous"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+  </head>
+<body>
+  <input id="position" name="position" size="60">
+<!--
+  <b>End: </b>
+  <select id="end">
+    <option value="Hoskote, Bengaluru">Hoskote</option>
+    <option value="St.Marks Road, Bengaluru">St.Marks Road</option>
+  </select>-->
+ <input id="pac-input" class="controls" type="text" placeholder="Search Box">
+ <br>
+
+<!--  <input  onclick="deleteMarkers();" type="button" value="clearmark" ><br><br>-->
+<button type="button" name="source" id="source">Start</button>
+<div id="source_placeholder"></div><br />
+
+<button type="button" name="destination" id="destination">End</button>
+<div id="destination_placeholder"></div><br />
+
+<!--<button type="button" name="calculate" id="calculate" visibility="hidden">Show Result</button>-->
+<div id="directions-panel"></div><br />
+<div id="map"></div>
+<script type="text/javascript">
+// Declare all required variables that we're going to use throughout this project
+var directionsService;
+var directionsDisplay;
+var geoCoding;
+var waypts = []; var arrlen;
+var infoWindows = []; var markers = [] ;
+var start;var cord;
+var stop; var marker;
+var map;
+var latlng;
+var progress = "true";
+var status = "false";
+var result; var temp1;
+ var im = 'http://www.robotwoods.com/dev/misc/bluecircle.png';
+
+ $(window).ready(function(){
+ $('#position').val('0,0');
+ });
+
+/*	This initialization function will invoke very first as soon as Google's JavaScript
+	map API will load. Setup required objects and load map	*/
+function initMap()
+{
+	directionsService = new google.maps.DirectionsService;
+	directionsDisplay = new google.maps.DirectionsRenderer;
+	geoCoding = new google.maps.Geocoder;
+	infowindow = new google.maps.InfoWindow();
+
+	if(navigator.geolocation)
+  {
+		navigator.geolocation.getCurrentPosition(function(position)
+    {
+			map = new google.maps.Map(document.getElementById('map'),
+      {
+				zoom: 15,
+				center: {lat: position.coords.latitude, lng: position.coords.longitude}
+      //  pos : {lat,lng};
+			});
+
+           var trafficLayer = new google.maps.TrafficLayer();
+               trafficLayer.setMap(map);
+			directionsDisplay.setMap(map);
+      // Create the search box and link it to the UI element.
+             var input = document.getElementById('pac-input');
+             var searchBox = new google.maps.places.SearchBox(input);
+
+
+      var onChangeHandler = function() {
+        calculateAndDisplayRoute(directionsService, directionsDisplay);
+      };
+    document.getElementById('pac-input').addEventListener('change', onChangeHandler);
+    },
+		function()
+    {
+			alert("Unable to get current location");
+		});
+	}
+	else
+  {
+		alert("Location service not supported in your web browser!");
+	}
+}
+
+function calculateAndDisplayRoute( directionsService, directionsDisplay )
+{
+  var forroute = latlng.lat+', '+latlng.lng;
+  directionsService.route({
+
+    origin: forroute,
+    destination: document.getElementById('pac-input').value,
+    travelMode: 'DRIVING'
+  }, function(response, status) {
+    if (status === 'OK') {
+      directionsDisplay.setDirections(response);
+      addMarkerfordesti(destination);
+    } else {
+      window.alert('Directions request failed due to ' + status);
+    }
+  });
+}
+
+// 	This function is use to repeatedly collect current location information
+function getCurrentLocation()
+{
+	if(progress == "false"){ return; }
+	navigator.geolocation.getCurrentPosition(function(position) {
+			latlng = {
+				lat: position.coords.latitude,
+				lng: position.coords.longitude
+			};
+
+      document.getElementById('position.coords.latitude+','+position.coords.longitude');
+      var post=position.coords.latitude+','+position.coords.longitude;
+      document.getElementById('position').value=post;
+    addMarker(latlng);
+      map.panTo(latlng);
+// marker = new google.maps.Marker({position: latlng,icon: './cabmarker.png', map: map});;
+			drawPath(latlng.lat, latlng.lng);
+    temp1 = [latlng.lat,latlng.lng];
+      //alert('temp1'+temp1);
+    //  alert(latlng.lat+','+latlng.lng);
+    result=latlng.lat+','+latlng.lng;
+    transition(result);
+	},
+	function()
+  {
+	  alert("Unable to get current location");
+	});
+}
+window.setInterval(function()
+{
+  getCurrentLocation();
+},1000);
+
+function show()
+{
+	if (document.getElementById)
+	document.getElementById("map").style.visibility = "visible";
+  //document.getElementById("position").style.visibility = "visible";
+//  document.getElementById("source_placeholder").style.visibility = "visible";
+}
+
+
+/* 	Preserving current location to draw complete route on map. Repeatedly looking
+	for new location information after set time interval of five seconds	*/
+function drawPath (lat, lng)
+{
+    	if(status == "false")
+      {
+    		start =  {lat:lat,lng:lng};
+    		status =  "true";
+    		getGeoLocationName(start, "source_placeholder", "Pickup at: ");
+    	}
+    	stop = {lat:lat,lng:lng};
+
+    	waypts.push({
+    		location: lat + "," + lng,
+    		stopover: false
+    	});
+  /*    setTimeout("show()",1500);
+    	setTimeout("getCurrentLocation()", 1500);
+      setTimeout("saveData()", 1000);
+      setTimeout("getGeoLocationName()",1000);
+      setTimeout("deleteMarkers()",1000);
+*/
+setTimeout("saveData()", 1000);
+setTimeout("getGeoLocationName()",1000);
+setTimeout("deleteMarkers()",1500);
+}
+/*
+for(var i=900; i < 4500; i=i+900)
+{
+	//setTimeout("hide()",i);
+	setTimeout("show()",i+1000);
+}
+*/
+
+var numDeltas = 100;
+var delay = 10;
+var i=0;
+var deltaLat;
+var deltaLng;
+function transition(result)
+{
+  console.log(result);
+    i = 0;
+    deltaLat = (result[0] - temp1[0])/numDeltas;
+    deltaLng = (result[1] - temp1[1])/numDeltas;
+    moveMarker(deltaLat,deltaLng);
+}
+
+function moveMarker(deltaLat,deltaLng)
+{
+    temp1[0] += deltaLat;
+    //alert(temp1[0]);
+    temp1[1] += deltaLng;
+    var latlng1 = new google.maps.LatLng(temp1[0], temp1[1]);
+//  console.log('im moving, ill'+latlng1 );
+      //infowindow.setPosition(latlng1);
+    if(i!=numDeltas)
+    {
+
+        i++;
+        setTimeout(moveMarker, delay);
+    }
+}
+
+function saveData(map,event)
+{
+var cord=latlng.lat+', '+latlng.lng;
+
+//var zoomLevel = map.getZoom();
+var pos = (cord).toString();
+
+pos = pos.replace('(','');
+pos = pos.replace(')','');
+pos = pos.replace(' ','');
+$('#position').val('(lat,lng) = '+latlng);
+}
+/*	Based on current location's longitude and latitude, getting and setting meaningful readable location name
+in info window. Also, centering map on exact location	*/
+function getGeoLocationName(latlng, placeholder, pretext)
+{
+	geoCoding.geocode({'location': latlng}, function(results, response)
+  {
+		if (response === google.maps.GeocoderStatus.OK)
+    {
+			if (results[1])
+      {
+				var location = results[1].formatted_address;
+				$("#" + placeholder).html("<strong>" + pretext + "</strong>" + location);
+
+				var infowindow = new google.maps.InfoWindow({
+					maxWidth: 200
+				});
+
+      //  infowindow.setContent('Here is ur location');
+			//	map.center = {lat: latlng.lat, lng: latlng.lng};
+        var pan=latlng.lat+', '+latlng.lng;
+        //alert(pan);
+      //  map.panTo(pan);
+				infowindow.setContent(location);
+				infowindow.setPosition(latlng);
+				infowindow.open(map);
+				infoWindows.push(infowindow);
+			}
+		}
+	});
+}
+
+/*	This is playing very important role in this project. Based on preserved locations from beginning to end journey,
+	drawing complete actual path/route from source to destination on map. Also, showing total kilometres travelled and overall
+	time taken	*/
+function displayTravelledRouteOnMap()
+{
+	waypts.shift();
+	waypts.pop();
+
+	if(waypts.length > 8){
+		waypts = shuffle(waypts);
+	}
+
+	directionsService.route({
+		origin: start,
+		destination: stop,
+		waypoints: waypts,
+		optimizeWaypoints: true,
+		travelMode: google.maps.TravelMode.DRIVING
+	},function(response, status)
+  {
+		if (status === google.maps.DirectionsStatus.OK)
+    {
+			directionsDisplay.setDirections(response);
+			var route = response.routes[0];
+			var summaryPanel = document.getElementById('directions-panel');
+			summaryPanel.innerHTML = '';
+			var summary = "";
+
+			for (var i = 0; i < route.legs.length; i++)
+      {
+				var routeSegment = i + 1;
+				summary = "<strong>Summary:</strong> You have travelled from <b><i>" + route.legs[i].start_address + "</i></b> to <b><i>";
+				summary += route.legs[i].end_address + ".</i></b> Covered <b><i> ";
+				summary += route.legs[i].distance.text + "</i></b> within <b><i>" + route.legs[i].duration.text + "</i></b>.";
+				summaryPanel.innerHTML = summary;
+			}
+		}
+		else
+    {
+			window.alert('Directions request failed due to ' + status);
+		}
+	});
+}
+
+/* 	This is simply a function to shuffle an array elements. I had taken this function
+	from StackOverflow.com to fulfill my shuffling and shortlisting requirement. Performed
+	little modification to return only eight elements instead of all.
+	Source: http://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
+*/
+function shuffle(array)
+{
+  alert(shuffle);
+	var counter =  1;
+	var currentIndex  = array.length, temporaryValue, randomIndex;
+
+	while (0 !== currentIndex) {
+		randomIndex = Math.floor(Math.random() * currentIndex);
+		currentIndex -= 1;
+		temporaryValue = array[currentIndex];
+		array[currentIndex] = array[randomIndex];
+		array[randomIndex] = temporaryValue;
+	}
+
+	arrlen = array.length;
+  alert(arrlen);
+	if(arrlen > 8){
+		for(var i = 0; i < (arrlen - 8); i++){
+			array.shift();
+		}
+	}
+  return array;
+}
+function addMarker(location)
+{
+        var marker = new google.maps.Marker({
+          position: location,
+        //  animation: google.maps.Animation.DROP,
+          map: map,
+          icon: './car2.png',
+          //icon : 'https://www.robotwoods.com/dev/misc/bluecircle.png'
+        });
+        markers.push(marker);
+}
+function setMapOnAll(map)
+{
+        for (var i = 0; i < markers.length; i++)
+        {
+          markers[i].setMap(map);
+        }
+}
+
+
+
+// Removes the markers from the map, but keeps them in the array.
+  function clearMarkers()
+  {
+    //alert('clearmark called');
+    setMapOnAll(null);
+  }
+
+// Deletes all markers in the array by removing references to them.
+      function deleteMarkers()
+      {
+        clearMarkers();
+//alert('deleteMarkers called');
+        markers = [];
+      }
+
+// These are simply event handlers when clicking on various buttons to take action
+$(document).ready(function(){
+	$("#source").click(function(){
+		getCurrentLocation();
+	});
+
+	$("#destination").click(function(){
+		progress = "false";
+		infoWindows[0].close();
+		getGeoLocationName(stop, "destination_placeholder", "Drop at: ");
+	});
+
+	$("#calculate").click(function(){
+		infoWindows[1].close();
+		displayTravelledRouteOnMap();
+	});
+});
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=ENTER_YOUR_KEY&signed_in=true&libraries=places&callback=initMap"
+        async defer>
+</script>
+</body>
+</html>
